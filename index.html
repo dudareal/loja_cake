@@ -16,101 +16,304 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // ========================
-    // Componente de Produto
-    // ========================
-    function ProductCard({ product }) {
-      const [comments, setComments] = useState(product.comments || []);
-      const [text, setText] = useState("");
-      const [rating, setRating] = useState(5);
+    // Componente de Carrossel
+    function Carousel() {
+      const slides = [
+        { image: 'assets/ifood.webp', caption: 'Patrocinador Oficial.' },
+        { image: 'assets/predilecta.webp', caption: 'Patrocinador Oficial.' },
+        { image: 'assets/bauducco.webp', caption: 'Patrocinador Oficial' },
+      ];
+      const [currentSlide, setCurrentSlide] = useState(0);
 
-      const handleComment = () => {
-        if (!text) return alert("Digite um comentário!");
+      useEffect(() => {
+        const interval = setInterval(() => {
+          setCurrentSlide((prev) => (prev + 1) % slides.length);
+        }, 5000);
+        return () => clearInterval(interval);
+      }, []);
 
-        fetch(`http://localhost:5000/cakes/${product.id}/comments`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user: "Cliente Anônimo", text, rating })
-        })
-          .then(res => res.json())
-          .then(comment => {
-            setComments([...comments, comment]);
-            setText("");
-            setRating(5);
-          })
-          .catch(err => console.error("Erro ao comentar:", err));
+      return (
+        <div className="carousel">
+          {slides.map((slide, index) => (
+            <div key={index} className={`slide ${index === currentSlide ? 'active' : ''}`}>
+              <img src={slide.image} alt={`Slide ${index + 1}`} />
+              <div className="caption">{slide.caption}</div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Componente de Produtos
+    function Products({ products, cart, setCart }) {
+      const addToCart = (product) => {
+        setCart([...cart, product]);
+      };
+      return (
+        <div className="products">
+          {products.map((product) => (
+            <div key={product.id} className="product-card">
+              <img src={product.image} alt={product.name} />
+              <div className="info">
+                <h3>{product.name}</h3>
+                <p className="price">R$ {product.price.toFixed(2)}</p>
+                <p className="description">{product.description}</p>
+                <button onClick={() => addToCart(product)}>Adicionar ao Carrinho</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Componente de Comentários
+    function Comments() {
+      const [comments, setComments] = useState(() => {
+        const saved = localStorage.getItem('comments');
+        return saved ? JSON.parse(saved) : [];
+      });
+      const [form, setForm] = useState({ name: '', text: '', rating: 5 });
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        const newComment = {
+          id: Date.now(),
+          name: form.name,
+          text: form.text,
+          rating: form.rating,
+          date: new Date().toLocaleDateString()
+        };
+        const updatedComments = [newComment, ...comments];
+        setComments(updatedComments);
+        localStorage.setItem('comments', JSON.stringify(updatedComments));
+        setForm({ name: '', text: '', rating: 5 });
       };
 
       return (
-        <div className="product-card">
-          <img src={product.image} alt={product.name} />
-          <div className="info">
-            <h3>{product.name}</h3>
-            <p className="price">R$ {product.price.toFixed(2)}</p>
-            <p className="description">{product.description}</p>
-
-            {/* Formulário de comentário */}
-            <div className="comment-form">
-              <h4>Deixe sua avaliação</h4>
-              <select value={rating} onChange={e => setRating(Number(e.target.value))}>
-                <option value={1}>⭐</option>
-                <option value={2}>⭐⭐</option>
-                <option value={3}>⭐⭐⭐</option>
-                <option value={4}>⭐⭐⭐⭐</option>
-                <option value={5}>⭐⭐⭐⭐⭐</option>
+        <div className="comments-section">
+          <h2>Comentários de Clientes</h2>
+          <form onSubmit={handleSubmit} className="comment-form">
+            <input
+              type="text"
+              placeholder="Seu nome"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
+            <textarea
+              placeholder="Seu comentário"
+              value={form.text}
+              onChange={(e) => setForm({ ...form, text: e.target.value })}
+              required
+            />
+            <div className="rating">
+              Avaliação:
+              <select
+                value={form.rating}
+                onChange={(e) => setForm({ ...form, rating: parseInt(e.target.value) })}
+              >
+                <option value={1}>1 ⭐</option>
+                <option value={2}>2 ⭐</option>
+                <option value={3}>3 ⭐</option>
+                <option value={4}>4 ⭐</option>
+                <option value={5}>5 ⭐</option>
               </select>
-              <textarea
-                placeholder="Escreva seu comentário..."
-                value={text}
-                onChange={e => setText(e.target.value)}
-              ></textarea>
-              <button onClick={handleComment}>Enviar</button>
             </div>
+            <button type="submit">Enviar</button>
+          </form>
 
-            {/* Lista de comentários */}
-            <div className="comments">
-              <h4>Comentários</h4>
-              {comments.length === 0 ? (
-                <p>Seja o primeiro a comentar!</p>
-              ) : (
-                comments.map((c, i) => (
-                  <p key={i}><strong>{c.user}</strong> ({c.rating}⭐): {c.text}</p>
-                ))
-              )}
-            </div>
+          <div className="comments-list">
+            {comments.length === 0 && <p>Nenhum comentário ainda.</p>}
+            {comments.map((c) => (
+              <div key={c.id} className="comment-card">
+                <div className="comment-header">
+                  <strong>{c.name}</strong> - <span>{c.date}</span>
+                  <span className="stars">{'⭐'.repeat(c.rating)}</span>
+                </div>
+                <p>{c.text}</p>
+              </div>
+            ))}
           </div>
         </div>
       );
     }
 
-    // ========================
-    // Componente Principal
-    // ========================
-    function App() {
-      const [products, setProducts] = useState([]);
-
-      // Carregar bolos do back-end
-      useEffect(() => {
-        fetch("http://localhost:5000/cakes")
-          .then(res => res.json())
-          .then(data => setProducts(data))
-          .catch(err => console.error("Erro ao buscar bolos:", err));
-      }, []);
-
+    // Componente de Cabeçalho
+    function Header({ user, setUser, cart, setShowLogin, setCurrentSection }) {
       return (
-        <main>
-          <h1>Buy Cake - Sua confeitaria virtual!</h1>
-          <div className="products">
-            {products.map(p => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </main>
+        <header>
+          <img src="assets/logo.webp" alt="Blair Waldorf Logo" className="logo" />
+          <nav>
+            <a href="#home" onClick={() => setCurrentSection('home')}>Home</a>
+            <a href="#colecoes" onClick={() => setCurrentSection('colecoes')}>Bolos Virais</a>
+            {user ? (
+              <>
+                <span>Olá, {user.name}</span>
+                <button onClick={() => setUser(null)}>Sair</button>
+              </>
+            ) : (
+              <button onClick={() => setShowLogin(true)}>Fazer Login</button>
+            )}
+            <div className="cart">
+              <span className="count">{cart.length}</span>
+              <span className="icon">🛒</span>
+            </div>
+          </nav>
+        </header>
       );
     }
 
-    // Renderizar
-    ReactDOM.render(<App />, document.getElementById("root"));
+    // Componente de Autenticação
+    function Auth({ setUser, setShowLogin }) {
+      const [isLogin, setIsLogin] = useState(true);
+      const [form, setForm] = useState({ name: '', email: '', password: '' });
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        setUser({ name: form.name, email: form.email });
+        setShowLogin(false);
+      };
+
+      return (
+        <div className="auth">
+          <h2>{isLogin ? 'Login' : 'Cadastro'}</h2>
+          <div>
+            <label>Nome</label>
+            <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          </div>
+          <div>
+            <label>Email</label>
+            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+          </div>
+          <div>
+            <label>Senha</label>
+            <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+          </div>
+          <button onClick={handleSubmit}>{isLogin ? 'Entrar' : 'Cadastrar'}</button>
+          <button className="toggle" onClick={() => setIsLogin(!isLogin)}>
+            {isLogin ? 'Criar conta' : 'Já tenho conta'}
+          </button>
+        </div>
+      );
+    }
+
+    // Componente de Checkout
+    function Checkout({ cart, setCart, user }) {
+      const [address, setAddress] = useState({ street: '', city: '', state: '', zip: '' });
+      const [paymentMethod] = useState('Pix');
+      const total = cart.reduce((sum, item) => sum + item.price, 0);
+
+      const handleAddressChange = (e) => {
+        setAddress({ ...address, [e.target.name]: e.target.value });
+      };
+
+      const handleCheckout = () => {
+        if (!address.street || !address.city || !address.state || !address.zip) {
+          alert('Por favor, preencha todos os campos do endereço.');
+          return;
+        }
+        alert(`Compra finalizada com sucesso! Total: R$ ${total.toFixed(2)}\nChave Pix: pixbuycake@gmail.com.br`);
+        setCart([]);
+        setAddress({ street: '', city: '', state: '', zip: '' });
+      };
+
+      return (
+        <div className="checkout">
+          <h2>Finalizar Compra</h2>
+          <div>
+            <h3>Itens no Carrinho</h3>
+            {cart.length === 0 ? <p>Carrinho vazio</p> : (
+              <ul>
+                {cart.map((item, index) => <li key={index}>{item.name} - R$ {item.price.toFixed(2)}</li>)}
+              </ul>
+            )}
+            <p><strong>Total: R$ {total.toFixed(2)}</strong></p>
+          </div>
+          <div>
+            <h3>Endereço de Entrega</h3>
+            <input type="text" name="street" placeholder="Rua" value={address.street} onChange={handleAddressChange} />
+            <input type="text" name="city" placeholder="Cidade" value={address.city} onChange={handleAddressChange} />
+            <input type="text" name="state" placeholder="Estado" value={address.state} onChange={handleAddressChange} />
+            <input type="text" name="zip" placeholder="CEP" value={address.zip} onChange={handleAddressChange} />
+          </div>
+          <div>
+            <h3>Método de Pagamento</h3>
+            <p>{paymentMethod}</p>
+          </div>
+          <button onClick={handleCheckout}>Finalizar Compra</button>
+        </div>
+      );
+    }
+
+    // Componente Principal
+    function App() {
+      const [user, setUser] = useState(null);
+      const [cart, setCart] = useState([]);
+      const [showLogin, setShowLogin] = useState(false);
+      const [currentSection, setCurrentSection] = useState('home');
+
+      const [products] = useState([
+        { id: 1, name: 'Bolo de Morango', price: 65.00, image: 'assets/bolo-morango.webp', description: 'Bolo de massa branca com recheio de morango e nata. Peso: 1kg' },
+        { id: 2, name: 'Bolo de Brigadeiro', price: 55.00, image: 'assets/bolo-brigadeiro.webp', description: 'Bolo de massa de chocolate com recheio de brigadeiro. Peso: 1,5kg' },
+        { id: 3, name: 'Bolo de Pessego', price: 70.00, image: 'assets/bolo-pessego.webp', description: 'Bolo de massa branca com recheio de geleia de pêssego e chantilly. Peso: 2kg' },
+      ]);
+
+      const [newCollection] = useState([
+        { id: 4, name: 'Bolo de Pistache com Brigadeiro', price: 240.00, image: 'assets/bolo-pistache.webp', description: 'Bolo de massa de chocolate com recheio de brigadeiro de pistache e brigadeiro de cacau. Peso: 1,3kg' },
+        { id: 5, name: 'Bolo Red Velvet', price: 99.90, image: 'assets/redvelvet.webp', description: 'Bolo de massa vermelha com recheio de cream cheese e frutas vermelhas. Peso: 1,5kg' },
+      ]);
+
+      useEffect(() => {
+        const savedUser = localStorage.getItem('user');
+        const savedCart = localStorage.getItem('cart');
+        if (savedUser) setUser(JSON.parse(savedUser));
+        if (savedCart) setCart(JSON.parse(savedCart));
+      }, []);
+
+      useEffect(() => {
+        if (user) localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('cart', JSON.stringify(cart));
+      }, [user, cart]);
+
+      return (
+        <div>
+          <div className={showLogin ? 'auth-overlay' : 'auth-overlay hidden'}></div>
+          <Header user={user} setUser={setUser} cart={cart} setShowLogin={setShowLogin} setCurrentSection={setCurrentSection} />
+          <main>
+            <div className={currentSection === 'home' ? '' : 'section hidden'}>
+              <div className="video-section">
+                <video autoPlay loop muted playsInline>
+                  <source src="assets/morangoamor.mp4" type="video/mp4" />
+                  Seu navegador não suporta o elemento de vídeo.
+                </video>
+                <div className="video-caption">Lançamento Exclusivo</div>
+              </div>
+              <Carousel />
+              <Products products={products} cart={cart} setCart={setCart} />
+              <Comments /> {/* <-- Adicionado aqui */}
+            </div>
+
+            <div className={currentSection === 'colecoes' ? 'new-collection' : 'new-collection section hidden'}>
+              <h2>Bolos Premium</h2>
+              <Products products={newCollection} cart={cart} setCart={setCart} />
+            </div>
+
+            {showLogin && !user && <Auth setUser={setUser} setShowLogin={setShowLogin} />}
+            {user && <Checkout cart={cart} setCart={setCart} user={user} />}
+          </main>
+
+          <footer>
+            <p>
+              <a href="https://www.instagram.com/bwjoaillerie?igsh=MWduMHgxaGNjeXI2aQ==" target="_blank">Siga-nos no Instagram</a>
+            </p>
+            <p>Endereço: Jardins, 1234, São Paulo - SP, CEP 01400-000</p>
+            <p>2025© BuyCake™. Todos os direitos reservados.</p>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
 </html>
