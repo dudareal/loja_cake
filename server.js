@@ -7,15 +7,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve arquivos estáticos
+
 app.use(express.static(__dirname));
 
-// Serve index.html na raiz
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Bolos e comentários
+
 let cakes = [
   { id: "1", name: "Bolo de Morango", price: 65, description: "Bolo de massa branca com recheio de morango e nata. Peso: 1kg", image: "assets/bolo-morango.webp", comments: [] },
   { id: "2", name: "Bolo de Brigadeiro", price: 55, description: "Bolo de massa de chocolate com recheio de brigadeiro. Peso: 1,5kg", image: "assets/bolo-brigadeiro.webp", comments: [] },
@@ -24,12 +24,12 @@ let cakes = [
   { id: "5", name: "Bolo Red Velvet", price: 99.9, description: "Bolo de massa vermelha com recheio de cream cheese e frutas vermelhas. Peso: 1,5kg", image: "assets/redvelvet.webp", comments: [] }
 ];
 
-// Rota para pegar todos os bolos
+
 app.get("/cakes", (req, res) => {
   res.json(cakes);
 });
 
-// Adicionar comentário
+
 app.post("/cakes/:id/comments", (req, res) => {
   const { id } = req.params;
   const cake = cakes.find(c => c.id === id);

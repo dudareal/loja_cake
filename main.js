@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const productsContainer = document.querySelector(".products");
   const newCollectionContainer = document.querySelector(".new-collection .products");
 
-  // Função para criar card de bolo
+
   function createCakeCard(cake) {
     const card = document.createElement("div");
     card.className = "product-card";
@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return card;
   }
 
-  // Buscar bolos do servidor
+
   fetch("/cakes")
     .then(res => res.json())
     .then(data => {

@@ -16,7 +16,6 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // Componente de Carrossel
     function Carousel() {
       const slides = [
         { image: 'assets/ifood.webp', caption: 'Patrocinador Oficial.' },
@@ -44,7 +43,6 @@
       );
     }
 
-    // Componente de Produtos
     function Products({ products, cart, setCart }) {
       const addToCart = (product) => {
         setCart([...cart, product]);
@@ -66,12 +64,8 @@
       );
     }
 
-    // Componente de Comentários
     function Comments() {
-      const [comments, setComments] = useState(() => {
-        const saved = localStorage.getItem('comments');
-        return saved ? JSON.parse(saved) : [];
-      });
+      const [comments, setComments] = useState([]);
       const [form, setForm] = useState({ name: '', text: '', rating: 5 });
 
       const handleSubmit = (e) => {
@@ -85,7 +79,6 @@
         };
         const updatedComments = [newComment, ...comments];
         setComments(updatedComments);
-        localStorage.setItem('comments', JSON.stringify(updatedComments));
         setForm({ name: '', text: '', rating: 5 });
       };
 
@@ -138,7 +131,6 @@
       );
     }
 
-    // Componente de Cabeçalho
     function Header({ user, setUser, cart, setShowLogin, setCurrentSection }) {
       return (
         <header>
@@ -163,7 +155,6 @@
       );
     }
 
-    // Componente de Autenticação
     function Auth({ setUser, setShowLogin }) {
       const [isLogin, setIsLogin] = useState(true);
       const [form, setForm] = useState({ name: '', email: '', password: '' });
@@ -197,10 +188,8 @@
       );
     }
 
-    // Componente de Checkout
     function Checkout({ cart, setCart, user }) {
       const [address, setAddress] = useState({ street: '', city: '', state: '', zip: '' });
-      const [paymentMethod] = useState('Pix');
       const total = cart.reduce((sum, item) => sum + item.price, 0);
 
       const handleAddressChange = (e) => {
@@ -218,34 +207,29 @@
       };
 
       return (
-        <div className="checkout">
+        <div className="checkout-container">
           <h2>Finalizar Compra</h2>
-          <div>
-            <h3>Itens no Carrinho</h3>
-            {cart.length === 0 ? <p>Carrinho vazio</p> : (
-              <ul>
-                {cart.map((item, index) => <li key={index}>{item.name} - R$ {item.price.toFixed(2)}</li>)}
-              </ul>
-            )}
+          <div className="cart-info">
+            {cart.length === 0 ? <p>Carrinho vazio</p> : <p>{cart.length} item(s) no carrinho</p>}
             <p><strong>Total: R$ {total.toFixed(2)}</strong></p>
           </div>
-          <div>
-            <h3>Endereço de Entrega</h3>
-            <input type="text" name="street" placeholder="Rua" value={address.street} onChange={handleAddressChange} />
-            <input type="text" name="city" placeholder="Cidade" value={address.city} onChange={handleAddressChange} />
-            <input type="text" name="state" placeholder="Estado" value={address.state} onChange={handleAddressChange} />
-            <input type="text" name="zip" placeholder="CEP" value={address.zip} onChange={handleAddressChange} />
-          </div>
-          <div>
-            <h3>Método de Pagamento</h3>
-            <p>{paymentMethod}</p>
-          </div>
+
+          <h3>Endereço de Entrega</h3>
+          <input type="text" placeholder="Rua" name="street" value={address.street} onChange={handleAddressChange} />
+          <input type="text" placeholder="Cidade" name="city" value={address.city} onChange={handleAddressChange} />
+          <input type="text" placeholder="Estado" name="state" value={address.state} onChange={handleAddressChange} />
+          <input type="text" placeholder="CEP" name="zip" value={address.zip} onChange={handleAddressChange} />
+
+          <h3>Método de Pagamento</h3>
+          <label>
+            <input type="radio" name="payment" value="pix" checked={true} readOnly /> Pix
+          </label>
+
           <button onClick={handleCheckout}>Finalizar Compra</button>
         </div>
       );
     }
 
-    // Componente Principal
     function App() {
       const [user, setUser] = useState(null);
       const [cart, setCart] = useState([]);
@@ -263,18 +247,6 @@
         { id: 5, name: 'Bolo Red Velvet', price: 99.90, image: 'assets/redvelvet.webp', description: 'Bolo de massa vermelha com recheio de cream cheese e frutas vermelhas. Peso: 1,5kg' },
       ]);
 
-      useEffect(() => {
-        const savedUser = localStorage.getItem('user');
-        const savedCart = localStorage.getItem('cart');
-        if (savedUser) setUser(JSON.parse(savedUser));
-        if (savedCart) setCart(JSON.parse(savedCart));
-      }, []);
-
-      useEffect(() => {
-        if (user) localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('cart', JSON.stringify(cart));
-      }, [user, cart]);
-
       return (
         <div>
           <div className={showLogin ? 'auth-overlay' : 'auth-overlay hidden'}></div>
@@ -288,9 +260,15 @@
                 </video>
                 <div className="video-caption">Lançamento Exclusivo</div>
               </div>
-              <Carousel />
-              <Products products={products} cart={cart} setCart={setCart} />
-              <Comments /> {/* <-- Adicionado aqui */}
+              <div className="home-layout">
+                <div className="sponsors-sidebar">
+                  <Carousel />
+                </div>
+                <div className="products-main">
+                  <Products products={products} cart={cart} setCart={setCart} />
+                </div>
+              </div>
+              <Comments />
             </div>
 
             <div className={currentSection === 'colecoes' ? 'new-collection' : 'new-collection section hidden'}>
@@ -304,7 +282,7 @@
 
           <footer>
             <p>
-              <a href="https://www.instagram.com/bwjoaillerie?igsh=MWduMHgxaGNjeXI2aQ==" target="_blank">Siga-nos no Instagram</a>
+              <a href="https://www.instagram.com/buycakeshop" target="_blank">Siga-nos no Instagram</a>
             </p>
             <p>Endereço: Jardins, 1234, São Paulo - SP, CEP 01400-000</p>
             <p>2025© BuyCake™. Todos os direitos reservados.</p>
